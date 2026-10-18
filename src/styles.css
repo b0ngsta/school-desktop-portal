@@ -1,0 +1,265 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CSS variables kept ONLY for inline styles & SVG charts (var(--brand) etc.) */
+:root {
+  --bg: #f4f6fb;
+  --ink: #101828;
+  --muted: #667085;
+  --line: #e7ebf3;
+  --brand: #4f46e5;
+  --brand-soft: #eef0fe;
+  --danger: #e11d48;
+  --danger-soft: #fdecef;
+  --ok: #12b76a;
+  --ok-soft: #e7f8f0;
+  --warn-soft: #fdf3e4;
+  --info-soft: #e7f5fd;
+}
+
+@layer base {
+  body {
+    @apply bg-page font-sans text-[14.5px] leading-[1.45] text-ink;
+  }
+  h1, h2, h3, h4 {
+    @apply tracking-tight;
+  }
+  a {
+    @apply text-inherit no-underline;
+  }
+
+  /* every bare <button> is a primary button; variant classes below override */
+  button {
+    @apply cursor-pointer rounded-[10px] border-0 bg-brand px-4 py-[9px] font-semibold text-white
+      transition-colors hover:bg-brand-dark active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  input, select, textarea {
+    @apply w-full rounded-[10px] border-[1.5px] border-line bg-white px-3 py-[9px] text-ink transition
+      focus:border-brand focus:outline-none focus:ring-[3px] focus:ring-brand/10;
+  }
+  label {
+    @apply mb-[5px] block text-[12.5px] font-semibold text-subtle;
+  }
+
+  table {
+    @apply w-full min-w-[560px] border-collapse text-[13.5px];
+  }
+  th {
+    @apply text-left text-[11.5px] font-semibold uppercase tracking-wider text-subtle;
+  }
+  th, td {
+    @apply border-b border-line px-2.5 py-[11px];
+  }
+  tbody tr {
+    @apply transition-colors hover:bg-[#fafbfe];
+  }
+  tr:last-child td {
+    @apply border-b-0;
+  }
+}
+
+@layer components {
+  /* ---------- buttons ---------- */
+  .ghost {
+    @apply border border-line bg-white text-ink shadow-card hover:bg-page;
+  }
+  .soft {
+    @apply bg-brand-soft text-brand hover:bg-[#e2e6fd];
+  }
+  .danger {
+    @apply bg-danger-soft px-3 py-1.5 text-danger hover:bg-danger hover:text-white;
+  }
+  .link {
+    @apply rounded-none bg-transparent p-0 font-semibold text-brand underline hover:bg-transparent hover:text-brand-dark;
+  }
+  .icon {
+    @apply bg-transparent px-2 py-1.5 text-base text-subtle hover:bg-page hover:text-ink;
+  }
+
+  /* ---------- layout helpers ---------- */
+  .card {
+    @apply mb-[18px] rounded-card border border-line bg-white p-5 shadow-card;
+  }
+  .card h3 {
+    @apply mb-3.5 text-[15.5px] font-bold;
+  }
+  .grid {
+    @apply gap-3.5;
+  }
+  .cols-2 { @apply grid-cols-1 min-[561px]:grid-cols-2; }
+  .cols-3 { @apply grid-cols-1 min-[561px]:grid-cols-2 min-[901px]:grid-cols-3; }
+  .cols-4 { @apply grid-cols-1 min-[561px]:grid-cols-2 min-[901px]:grid-cols-4; }
+  .cards  { @apply grid-cols-[repeat(auto-fill,minmax(240px,1fr))]; }
+
+  .row {
+    @apply flex flex-wrap items-end gap-2.5;
+  }
+  .row > * { @apply min-w-[130px] flex-1; }
+  .row > .fit { @apply min-w-0 flex-none; }
+  .row.center { @apply items-center; }
+
+  .page-head { @apply mb-5; }
+  .page-head h2 { @apply text-[21px] font-extrabold; }
+  .page-head p { @apply mt-[3px] text-subtle; }
+  .page-head .row-right { @apply flex flex-wrap items-center gap-2.5; }
+
+  /* ---------- small bits ---------- */
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-[13px] py-[5px]
+      text-xs font-semibold text-subtle;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-brand-soft px-2.5 py-[3px]
+      text-[11.5px] font-bold text-brand;
+  }
+  .badge.green { @apply bg-ok-soft text-ok; }
+  .badge.amber { @apply bg-warn-soft text-warn; }
+  .badge.red   { @apply bg-danger-soft text-danger; }
+  .badge.blue  { @apply bg-info-soft text-info; }
+  .badge.gray  { @apply bg-[#f1f3f8] text-subtle; }
+
+  .grade-pill {
+    @apply inline-block min-w-[34px] rounded-lg bg-ok-soft px-2 py-[3px] text-center text-[12.5px]
+      font-extrabold text-ok;
+  }
+  .error {
+    @apply mb-3.5 rounded-[10px] bg-danger-soft px-3.5 py-2.5 text-[13px] font-semibold text-danger;
+  }
+  .empty { @apply px-2.5 py-8 text-center text-subtle; }
+  .empty .big { @apply mb-2 text-[34px]; }
+  .muted { @apply text-subtle; }
+  .small { @apply text-[12.5px]; }
+  .skeleton { @apply py-5 text-center text-subtle; }
+  .list-item { @apply border-b border-line py-3.5 last:border-b-0; }
+  .clickable { @apply cursor-pointer; }
+  .table-wrap { @apply -mx-1.5 overflow-x-auto; }
+
+  .filelink {
+    @apply rounded-full border border-line bg-page px-3 py-[5px] text-[12.5px] font-semibold text-ink
+      hover:bg-brand-soft hover:text-brand;
+  }
+  .dropzone {
+    @apply cursor-pointer rounded-xl border-2 border-dashed border-line p-6 text-center text-subtle
+      transition-colors hover:border-brand hover:bg-brand-soft;
+  }
+  .dropzone.drag { @apply border-brand bg-brand-soft; }
+  .section-chip {
+    @apply flex items-center justify-between gap-2 rounded-xl border border-line bg-page px-3.5 py-3
+      font-semibold transition-colors hover:border-brand hover:bg-brand-soft;
+  }
+
+  /* ---------- tabs ---------- */
+  .tabs {
+    @apply mb-[18px] flex w-fit max-w-full gap-1 overflow-x-auto rounded-xl bg-[#edf0f7] p-1;
+  }
+  .tabs button {
+    @apply whitespace-nowrap rounded-[9px] bg-transparent px-[18px] py-2 text-subtle
+      hover:bg-transparent hover:text-ink;
+  }
+  .tabs button.active { @apply bg-white text-ink shadow-card; }
+
+  /* ---------- stat cards ---------- */
+  .stat {
+    @apply flex items-center gap-3.5 rounded-card border border-line bg-white p-[18px] shadow-card
+      transition-all hover:-translate-y-0.5 hover:shadow-pop;
+  }
+  .stat .bubble {
+    @apply grid h-[46px] w-[46px] flex-none place-items-center rounded-[13px] text-[21px];
+  }
+  .stat .num { @apply text-[22px] font-extrabold leading-tight; }
+  .stat .lbl { @apply text-[12.5px] font-semibold text-subtle; }
+  a.stat-link { @apply block; }
+  a.stat-link .stat { @apply cursor-pointer; }
+
+  /* ---------- avatar ---------- */
+  .avatar {
+    @apply grid h-9 w-9 flex-none place-items-center overflow-hidden rounded-full bg-brand-soft
+      font-bold text-brand;
+  }
+  .avatar img { @apply h-full w-full object-cover; }
+
+  /* ---------- activity / legend / breadcrumb / hero ---------- */
+  .activity {
+    @apply flex items-start gap-3 border-b border-line py-[11px] last:border-b-0;
+  }
+  .activity .dot {
+    @apply grid h-[34px] w-[34px] flex-none place-items-center rounded-[10px] bg-brand-soft text-[15px];
+  }
+  .activity b { @apply block text-[13.5px]; }
+  .activity .sub { @apply text-xs text-subtle; }
+
+  .legend { @apply grid gap-2 text-[13px]; }
+  .legend .li { @apply flex items-center gap-2; }
+  .legend .swatch { @apply h-2.5 w-2.5 flex-none rounded-[3px]; }
+  .legend .amt { @apply ml-auto font-bold; }
+
+  .bc { @apply flex flex-wrap gap-1.5 text-[13px] text-subtle; }
+  .bc a { @apply font-semibold text-brand hover:underline; }
+
+  .hero {
+    @apply mb-[18px] flex flex-wrap items-center gap-4 rounded-card bg-gradient-to-br from-brand
+      to-[#7c6cf5] p-[22px] text-white;
+  }
+  .hero h3 { @apply m-0 text-[19px]; }
+  .hero .sub { @apply text-[13px] opacity-85; }
+  .hero button { @apply bg-white text-brand hover:bg-brand-soft; }
+
+  .photo-pick { @apply flex items-center gap-3; }
+
+  /* ---------- auth screens (login, forgot password, forced change) ---------- */
+  .auth-screen {
+    @apply grid min-h-screen place-items-center bg-gradient-to-br from-brand via-[#7c6cf5] to-[#a78bfa] p-5;
+  }
+  .auth-card {
+    @apply grid w-full max-w-[400px] gap-4 rounded-[20px] bg-white p-8 shadow-pop md:p-10;
+  }
+  .auth-brand { @apply text-[34px]; }
+  .auth-title { @apply text-2xl font-extrabold; }
+  .auth-sub { @apply -mt-2.5 text-subtle; }
+  .auth-footer { @apply border-t border-line pt-3 text-center text-[13px]; }
+
+  /* ---------- small helpers used by forms ---------- */
+  .text-link { @apply text-[13px] font-semibold text-brand hover:underline; }
+  .hint-list { @apply list-disc space-y-1 pl-5 text-[12.5px] text-subtle; }
+  .notice {
+    @apply rounded-[10px] bg-info-soft px-3.5 py-2.5 text-[13px] font-medium text-ink;
+  }
+  .notice.ok { @apply bg-ok-soft; }
+  .notice.warn { @apply bg-warn-soft; }
+  .code-input { @apply text-center font-mono text-[22px] tracking-[0.5em]; }
+  .split { @apply flex flex-wrap items-center justify-between gap-2; }
+  .btn-row { @apply flex flex-wrap items-center gap-2.5; }
+  .input-addon { @apply relative; }
+  .input-addon input { @apply pr-16; }
+  .input-addon .addon {
+    @apply absolute inset-y-0 right-1 my-1 bg-transparent px-2.5 py-0 text-[12px] text-subtle
+      hover:bg-page hover:text-ink;
+  }
+  button.sm { @apply px-[11px] py-[5px]; }
+  td.actions { @apply whitespace-nowrap text-right; }
+  td.actions > * + * { @apply ml-1.5; }
+  .pager { @apply mt-3 flex items-center justify-end gap-2 border-t border-line pt-3; }
+  .pager button { @apply px-3 py-1.5; }
+
+  /* ---------- import report ---------- */
+  .filter-chips { @apply mb-3 flex flex-wrap gap-1.5; }
+  .chip-btn {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1 text-[12.5px]
+      text-subtle shadow-none hover:bg-page hover:text-ink;
+  }
+  .chip-btn .count { @apply rounded-full bg-page px-1.5 text-[11px] font-bold; }
+  .chip-btn.active { @apply border-brand bg-brand-soft text-brand; }
+  .chip-btn.has-errors .count { @apply bg-danger-soft text-danger; }
+  .report-table td { @apply align-top; }
+  tr.row-error { @apply bg-danger-soft/40; }
+  tr.row-warn { @apply bg-warn-soft/50; }
+  .msg-list { @apply list-disc space-y-0.5 pl-4 text-[12.5px]; }
+  .error-text { @apply text-danger; }
+  .warn-text { @apply text-warn; }
+  .disclosure { @apply mt-3 rounded-xl border border-line px-3.5 py-2.5; }
+  .disclosure > summary { @apply cursor-pointer text-[13px] font-semibold text-subtle; }
+  .disclosure[open] > summary { @apply mb-2.5; }
+  code { @apply rounded bg-page px-1 font-mono text-[12px]; }
+}
