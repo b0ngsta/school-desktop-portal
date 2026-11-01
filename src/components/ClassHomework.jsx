@@ -2,7 +2,15 @@ import React, { Fragment, useEffect, useState } from 'react'
 import { api, fmtDate } from '../api.js'
 import usePagedList from '../hooks/usePagedList.js'
 import { localISODate } from '../lib/format.js'
+import { AttachmentChip, FileField, fileProblem } from './Attachment.jsx'
 import { Avatar, DateInput, Empty, ErrorBox, Field, Modal, Pager } from './ui.jsx'
+
+/** Upload the homework sheet (PDF / photo) of a homework that already exists. */
+async function attachSheet(homeworkId, file) {
+  const fd = new FormData()
+  fd.append('file', file)
+  await api(`/homework/${homeworkId}/attachment`, { method: 'POST', formData: fd })
+}
 
 const EMPTY = { title: '', subject: '', due_date: '', note: '' }
 const STATUS = [['pending', 'Pending'], ['submitted', 'Submitted'], ['late', 'Late']]
@@ -18,20 +26,33 @@ export default function ClassHomework({ classId, sectionId, subjects = [], canAs
   const [open, setOpen] = useState(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [file, setFile] = useState(null)
+  const [fileKey, setFileKey] = useState(0)
 
   async function add(e) {
     e.preventDefault()
+    const problem = fileProblem(file)
+    if (problem) return setError(problem)
     setBusy(true)
     setError('')
     try {
-      await api('/homework', {
+      const created = await api('/homework', {
         method: 'POST',
         body: {
           class_id: Number(classId), section_id: Number(sectionId), title: form.title.trim(),
           subject: form.subject.trim() || null, due_date: form.due_date || null, note: form.note.trim() || null,
         },
       })
+      if (file) {
+        try {
+          await attachSheet(created.id, file)
+        } catch (err) {
+          setError(`Homework given, but the file could not be attached: ${err.message}`)
+        }
+      }
       setForm(EMPTY)
+      setFile(null)
+      setFileKey((k) => k + 1)
       list.reload()
     } catch (err) {
       setError(err.message)
@@ -73,6 +94,7 @@ export default function ClassHomework({ classId, sectionId, subjects = [], canAs
             <Field label="Note for parents">
               <input value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />
             </Field>
+            <FileField file={file} onChange={setFile} inputKey={fileKey} label="Homework sheet (PDF / photo)" />
             <button className="fit" disabled={busy}>{busy ? 'Giving…' : 'Give homework'}</button>
           </form>
         </div>
@@ -100,6 +122,11 @@ export default function ClassHomework({ classId, sectionId, subjects = [], canAs
                           <b>{h.title}</b>
                           {h.subject && <span className="badge gray ml-2">{h.subject}</span>}
                           {h.note && <div className="muted small">{h.note}</div>}
+                          {h.attachment_path && (
+                            <div className="mt-1">
+                              <AttachmentChip path={h.attachment_path} name={h.attachment_name} type={h.attachment_type} />
+                            </div>
+                          )}
                         </td>
                         <td className={overdue ? 'text-danger' : ''}>{fmtDate(h.due_date)}</td>
                         <td>
@@ -233,8 +260,12 @@ function EditModal({ homework, subjects, onClose, onSaved }) {
   })
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [file, setFile] = useState(null)
+  const [removeFile, setRemoveFile] = useState(false)
   async function submit(e) {
     e.preventDefault()
+    const problem = fileProblem(file)
+    if (problem) return setError(problem)
     setBusy(true)
     setError('')
     try {
@@ -242,6 +273,10 @@ function EditModal({ homework, subjects, onClose, onSaved }) {
         method: 'PUT',
         body: { title: form.title.trim(), subject: form.subject.trim() || null, due_date: form.due_date || null, note: form.note.trim() || null },
       })
+      if (file) await attachSheet(homework.id, file)
+      else if (removeFile && homework.attachment_path) {
+        await api(`/homework/${homework.id}/attachment`, { method: 'DELETE' })
+      }
       onSaved()
     } catch (err) {
       setError(err.message)
@@ -263,6 +298,17 @@ function EditModal({ homework, subjects, onClose, onSaved }) {
           </Field>
         </div>
         <Field label="Note for parents"><input value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></Field>
+        {homework.attachment_path && !file && (
+          <div className="btn-row">
+            <AttachmentChip path={homework.attachment_path} name={homework.attachment_name} type={homework.attachment_type} />
+            <label className="mb-0 flex items-center gap-1.5">
+              <input type="checkbox" className="w-auto" checked={removeFile} onChange={(e) => setRemoveFile(e.target.checked)} />
+              Remove file
+            </label>
+          </div>
+        )}
+        <FileField file={file} onChange={setFile}
+          label={homework.attachment_path ? 'Replace the homework sheet (PDF / photo)' : 'Homework sheet (PDF / photo)'} />
         <button disabled={busy}>{busy ? 'Saving…' : 'Save changes'}</button>
       </form>
     </Modal>

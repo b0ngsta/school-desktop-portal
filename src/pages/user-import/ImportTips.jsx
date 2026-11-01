@@ -1,9 +1,9 @@
 import React from 'react'
 
 const TIPS = [
-  <>Save as <b>CSV UTF-8</b> (Excel: File → Save As → CSV UTF-8; Google Sheets: File → Download → CSV). Plain “CSV” from Excel breaks Hindi/Tamil names.</>,
-  <>Format phone and admission-number columns as <b>Text</b> before typing, or Excel turns 9876543210 into 9.88E+09 and drops leading zeros.</>,
-  <>In exports, values starting with + = - @ begin with an apostrophe so Excel doesn't run them as formulas. Leave it; the import removes it.</>,
+  <>Fill in the downloaded <b>Excel template</b> and upload it as it is (.xlsx). From Google Sheets use File → Download → Microsoft Excel (.xlsx).</>,
+  <>Phone, roll and admission-number columns are already <b>text</b> in the template, so leading zeros and + are kept.</>,
+  <>Keep the column names in the first row; the “How to fill” sheet in the template lists the required columns.</>,
   <>New users are asked to change their password the first time they sign in.</>,
 ]
 

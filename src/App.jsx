@@ -38,6 +38,11 @@ import FeeClaims from './pages/FeeClaims.jsx'
 import SchoolTimings from './pages/SchoolTimings.jsx'
 import Notifications from './pages/Notifications.jsx'
 import NotificationBell from './components/NotificationBell.jsx'
+import SchoolProfile from './pages/SchoolProfile.jsx'
+import Announcements from './pages/Announcements.jsx'
+import Messages from './pages/Messages.jsx'
+import Events from './pages/Events.jsx'
+import Documents from './pages/Documents.jsx'
 
 const ALL_STAFF = [...MANAGERS, 'teacher']
 const WITH_DRIVER = [...ALL_STAFF, 'driver']
@@ -63,7 +68,12 @@ const NAV = [
   { to: '/payments', label: 'Payments', icon: '💳', roles: MANAGERS },
   { to: '/salary', label: 'Salary', icon: '💵', roles: WITH_DRIVER },
   { to: '/notices', label: 'Notices', icon: '📣', roles: WITH_DRIVER },
+  { to: '/messages', label: 'Messages to Parents', icon: '✉️', roles: ALL_STAFF },
+  { to: '/documents', label: 'Timetables & Syllabus', icon: '📄', roles: ALL_STAFF },
+  { to: '/events', label: 'Events', icon: '🎉', roles: ALL_STAFF },
+  { to: '/announcements', label: 'App Announcements', icon: '📢', roles: MANAGERS },
   { to: '/settings/school-timings', label: 'School Timings', icon: '⏰', roles: MANAGERS },
+  { to: '/settings/school', label: 'School Profile', icon: '🏫', roles: MANAGERS },
 ]
 
 const TITLES = {
@@ -89,6 +99,11 @@ const TITLES = {
   '/salary': 'Salary',
   '/fee-claims': 'Fee Claims',
   '/settings/school-timings': 'School Timings',
+  '/settings/school': 'School Profile',
+  '/messages': 'Messages to Parents',
+  '/documents': 'Timetables & Syllabus',
+  '/events': 'Events',
+  '/announcements': 'App Announcements',
   '/notifications': 'Notifications',
   '/users/import': 'Import users',
 }
@@ -176,7 +191,14 @@ export default function App() {
           <span className="grid h-[34px] w-[34px] place-items-center rounded-[10px] bg-brand text-[17px] text-white">
             🎓
           </span>
-          EduManage
+          <span className="min-w-0">
+            EduManage
+            {user.org?.name && (
+              <span className="block truncate text-[11.5px] font-semibold text-subtle" title={user.org.code}>
+                {user.org.name}
+              </span>
+            )}
+          </span>
         </div>
         {nav.map((n) => (
           <NavLink
@@ -269,6 +291,13 @@ export default function App() {
             )}
             {user.user_type !== 'driver' && <Route path="/fee-claims" element={<FeeClaims user={user} />} />}
             {isManager && <Route path="/settings/school-timings" element={<SchoolTimings user={user} />} />}
+            {isManager && <Route path="/settings/school" element={<SchoolProfile user={user} />} />}
+            {isManager && <Route path="/announcements" element={<Announcements />} />}
+            {user.user_type !== 'driver' && <>
+              <Route path="/messages" element={<Messages user={user} />} />
+              <Route path="/documents" element={<Documents user={user} />} />
+              <Route path="/events" element={<Events user={user} />} />
+            </>}
             <Route path="/exams" element={<Exams user={user} />} />
             <Route path="/calendar" element={<Calendar user={user} />} />
             <Route path="/exams/:examId" element={<ExamDetail user={user} />} />

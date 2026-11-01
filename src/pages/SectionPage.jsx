@@ -109,7 +109,7 @@ export default function SectionPage({ user }) {
           )}
           {canEdit && (
             <Link to={`/users/import?user_type=student&class_id=${classId}&section_id=${sectionId}`}>
-              <button className="soft">⬆️ Import CSV</button>
+              <button className="soft">⬆️ Import from Excel</button>
             </Link>
           )}
           {canEdit && <button onClick={() => { setFormError(''); setAdding(true) }}>+ Add student</button>}

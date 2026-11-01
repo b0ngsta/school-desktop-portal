@@ -16,7 +16,7 @@ export default function Exams({ user }) {
   const [creating, setCreating] = useState(false)
   const [viewingPaper, setViewingPaper] = useState(null) // exam
   const [uploadFor, setUploadFor] = useState(null) // exam id being uploaded
-  const [form, setForm] = useState({ name: '', class_id: '', start_date: '', end_date: '' })
+  const [form, setForm] = useState({ name: '', class_id: '', start_date: '', end_date: '', max_marks: '' })
   const fileInput = useRef(null)
 
   async function load() {
@@ -37,9 +37,13 @@ export default function Exams({ user }) {
     try {
       await api('/exams', {
         method: 'POST',
-        body: { ...form, class_id: form.class_id === 'all' ? null : Number(form.class_id) },
+        body: {
+          ...form,
+          class_id: form.class_id === 'all' ? null : Number(form.class_id),
+          max_marks: form.max_marks === '' ? null : Number(form.max_marks),
+        },
       })
-      setForm({ name: '', class_id: '', start_date: '', end_date: '' })
+      setForm({ name: '', class_id: '', start_date: '', end_date: '', max_marks: '' })
       setCreating(false)
       load()
     } catch (err) {
@@ -204,6 +208,10 @@ export default function Exams({ user }) {
               <Field label="End date">
                 <DateInput value={form.end_date} required min={form.start_date}
                   onChange={(e) => setForm({ ...form, end_date: e.target.value })} />
+              </Field>
+              <Field label="Maximum marks per subject (optional)">
+                <input type="number" min="1" step="0.5" value={form.max_marks} placeholder="e.g. 100"
+                  onChange={(e) => setForm({ ...form, max_marks: e.target.value })} />
               </Field>
             </div>
             <button>Create exam</button>

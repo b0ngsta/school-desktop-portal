@@ -3,6 +3,8 @@ import { MANAGERS, api } from '../api.js'
 import { DateInput, Empty, StatCard } from '../components/ui.jsx'
 import { localISODate as today } from '../lib/format.js'
 
+const STATUS_LABELS = { present: 'present', absent: 'absent', leave: 'leave', half_day: 'half day' }
+
 export default function Attendance({ user }) {
   const isManager = MANAGERS.includes(user.user_type)
   const [stats, setStats] = useState(null)
@@ -92,7 +94,7 @@ export default function Attendance({ user }) {
     }
   }
 
-  const TONES = { present: 'green', absent: 'red', leave: 'amber' }
+  const TONES = { present: 'green', absent: 'red', leave: 'amber', half_day: 'blue' }
 
   return (
     <>
@@ -154,7 +156,7 @@ export default function Attendance({ user }) {
                       <td>
                         {selected?.canMark ? (
                           <div style={{ display: 'flex', gap: 6 }}>
-                            {['present', 'absent', 'leave'].map((st) => (
+                            {['present', 'absent', 'leave', 'half_day'].map((st) => (
                               <button key={st} type="button"
                                 className={r.status === st ? '' : 'ghost'}
                                 style={{ padding: '5px 12px', fontSize: 12.5 }}
@@ -163,12 +165,12 @@ export default function Attendance({ user }) {
                                   next[i] = { ...r, status: st }
                                   setRows(next)
                                 }}>
-                                {st}
+                                {STATUS_LABELS[st]}
                               </button>
                             ))}
                           </div>
                         ) : (
-                          <span className={`badge ${TONES[r.status] || 'gray'}`}>{r.status}</span>
+                          <span className={`badge ${TONES[r.status] || 'gray'}`}>{STATUS_LABELS[r.status] || r.status}</span>
                         )}
                       </td>
                     </tr>

@@ -26,7 +26,10 @@ export default function Account({ user }) {
     <>
       <div className="page-head">
         <h2>My account</h2>
-        <p>{user.full_name} · {roleLabel(user.user_type)}</p>
+        <p>
+          {user.full_name} · {roleLabel(user.user_type)}
+          {user.org?.name && <> · {user.org.name} (school code {user.org.code})</>}
+        </p>
       </div>
 
       <div className="grid cols-2 items-start">

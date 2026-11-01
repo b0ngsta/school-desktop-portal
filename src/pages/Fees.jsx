@@ -1,15 +1,20 @@
 import React, { useEffect, useState } from 'react'
 import { api, fmtDate, fmtDateTime, photoUrl } from '../api.js'
-import { Avatar, DateInput, Donut, Empty, Field, Modal, StatCard } from '../components/ui.jsx'
+import { Avatar, DateInput, Donut, Empty, Field, Modal, Pager, StatCard } from '../components/ui.jsx'
+import StudentSearch from '../components/StudentSearch.jsx'
+import usePagedList from '../hooks/usePagedList.js'
 
 const inr = (n) => '₹' + Number(n || 0).toLocaleString('en-IN')
 const CLAIM_BADGE = { pending: 'amber', approved: 'green', rejected: 'red' }
 
+// Lists are fetched a page at a time (limit/offset + X-Total-Count): a big
+// school has tens of thousands of fee records, and loading them all at once
+// froze this page.
+const PAGE = 50
+const SIDE_PAGE = 20
+
 export default function Fees() {
   const [stats, setStats] = useState(null)
-  const [items, setItems] = useState(null)
-  const [pending, setPending] = useState(null)
-  const [students, setStudents] = useState([])
   const [classes, setClasses] = useState([])
   const [filter, setFilter] = useState('')
   const [error, setError] = useState('')
@@ -20,32 +25,34 @@ export default function Fees() {
   const [paying, setPaying] = useState(null) // fee row
   const [method, setMethod] = useState('cash')
   const [form, setForm] = useState({ student_id: '', title: '', amount: '', due_date: '' })
-  const [claims, setClaims] = useState(null)
   const [claimStats, setClaimStats] = useState(null)
   const [claimFilter, setClaimFilter] = useState('pending')
+  const feeList = usePagedList('/fees' + (filter ? `?status_filter=${filter}` : ''), PAGE)
+  const pendingList = usePagedList('/fees/pending-students', SIDE_PAGE)
+  const claimList = usePagedList('/fees/claims' + (claimFilter ? `?status_filter=${claimFilter}` : ''), SIDE_PAGE)
+  const items = feeList.rows
+  const pending = pendingList.rows
+  const claims = claimList.rows
+  const listError = feeList.error || pendingList.error || claimList.error
   const [reviewing, setReviewing] = useState(null) // claim row
   const [reviewNote, setReviewNote] = useState('')
 
-  async function load() {
+  async function loadStats() {
     try {
       setStats(await api('/fees/stats'))
-      setItems(await api('/fees' + (filter ? `?status_filter=${filter}` : '')))
-      setPending(await api('/fees/pending-students'))
-      loadClaims()
+      setClaimStats(await api('/fees/claims/stats'))
     } catch (e) {
       setError(e.message)
     }
   }
 
-  async function loadClaims() {
-    try {
-      setClaimStats(await api('/fees/claims/stats'))
-      setClaims(await api('/fees/claims' + (claimFilter ? `?status_filter=${claimFilter}` : '')))
-    } catch (e) {
-      setError(e.message)
-    }
+  /** After a change: the numbers and every list (each stays on its page). */
+  function load() {
+    loadStats()
+    feeList.reload()
+    pendingList.reload()
+    claimList.reload()
   }
-  useEffect(() => { loadClaims() }, [claimFilter])
 
   async function review(claim, action) {
     try {
@@ -60,9 +67,8 @@ export default function Fees() {
       setError(err.message)
     }
   }
-  useEffect(() => { load() }, [filter])
+  useEffect(() => { loadStats() }, [])
   useEffect(() => {
-    api('/students').then(setStudents).catch(() => {})
     api('/classes').then(setClasses).catch(() => {})
   }, [])
 
@@ -144,7 +150,7 @@ export default function Fees() {
           <button onClick={() => setCreating(true)}>+ Add fee</button>
         </div>
       </div>
-      {error && <div className="error">{error}</div>}
+      {(error || listError) && <div className="error">{error || listError}</div>}
 
       <div className="grid cols-4" style={{ marginBottom: 18 }}>
         <StatCard icon="💰" label="Collected" value={stats && inr(stats.collected)} tone="green" />
@@ -193,7 +199,10 @@ export default function Fees() {
 
         {/* students with pending fees */}
         <div className="card" style={{ marginBottom: 0, maxHeight: 320, overflowY: 'auto' }}>
-          <h3>Students with pending fees</h3>
+          <h3>
+            Students with pending fees
+            {pendingList.total > 0 && <span className="muted small"> · {pendingList.total}</span>}
+          </h3>
           {!pending ? (
             <div className="skeleton">Loading…</div>
           ) : pending.length === 0 ? (
@@ -220,6 +229,8 @@ export default function Fees() {
               </div>
             ))
           )}
+          <Pager offset={pendingList.offset} limit={pendingList.limit} total={pendingList.total}
+            onChange={pendingList.setOffset} />
         </div>
       </div>
 
@@ -305,11 +316,16 @@ export default function Fees() {
             </table>
           </div>
         )}
+        <Pager offset={claimList.offset} limit={claimList.limit} total={claimList.total}
+          onChange={claimList.setOffset} />
       </div>
 
       <div className="card">
         <div className="row center" style={{ marginBottom: 12 }}>
-          <h3 style={{ flex: 1, marginBottom: 0 }}>Fee records</h3>
+          <h3 style={{ flex: 1, marginBottom: 0 }}>
+            Fee records
+            {feeList.total > 0 && <span className="muted small"> · {feeList.total}</span>}
+          </h3>
           <select className="fit" style={{ width: 140 }} value={filter}
             onChange={(e) => setFilter(e.target.value)}>
             <option value="">All</option>
@@ -358,22 +374,14 @@ export default function Fees() {
             </table>
           </div>
         )}
+        <Pager offset={feeList.offset} limit={feeList.limit} total={feeList.total} onChange={feeList.setOffset} />
       </div>
 
       {creating && (
         <Modal error={error} title="Add fee record" onClose={() => setCreating(false)}>
           <form onSubmit={submit} className="grid">
-            <Field label="Student">
-              <select value={form.student_id} required
-                onChange={(e) => setForm({ ...form, student_id: e.target.value })}>
-                <option value="">Select…</option>
-                {students.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.full_name}{s.class_name ? ` (${s.class_name} ${s.section_name || ''})` : ''}
-                  </option>
-                ))}
-              </select>
-            </Field>
+            <StudentSearch value={form.student_id}
+              onChange={(id) => setForm({ ...form, student_id: id })} />
             <div className="grid cols-2">
               <Field label="Title">
                 <input value={form.title} placeholder="e.g. Term 1 Fees 2026" required
@@ -505,3 +513,4 @@ export default function Fees() {
     </>
   )
 }
+

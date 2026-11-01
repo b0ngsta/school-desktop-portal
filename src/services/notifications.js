@@ -30,11 +30,14 @@ export async function refreshUnread() {
   }
 }
 
-/** Start polling; returns stop(). */
+/**
+ * Start polling; returns stop(). A hidden tab doesn't poll (staff keep the app
+ * open all day in a background tab); it catches up as soon as it is shown.
+ */
 export function startUnreadPolling(ms = 60_000) {
   supported = true
   refreshUnread()
-  const timer = setInterval(refreshUnread, ms)
+  const timer = setInterval(() => document.visibilityState !== 'hidden' && refreshUnread(), ms)
   const onVisible = () => document.visibilityState === 'visible' && refreshUnread()
   document.addEventListener('visibilitychange', onVisible)
   return () => {

@@ -8,7 +8,7 @@ export default function ColumnHelp({ info }) {
   return (
     <details className="disclosure">
       <summary>
-        Columns ({info.columns.length}) · max {info.max_rows} rows, CSV {info.max_csv_mb} MB,
+        Columns ({info.columns.length}) · max {info.max_rows} rows, file {info.max_csv_mb} MB,
         photos ZIP {info.max_zip_mb} MB ({info.photo_max_mb} MB per photo)
       </summary>
       <div className="table-wrap">

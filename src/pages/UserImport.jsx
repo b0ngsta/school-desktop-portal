@@ -12,12 +12,12 @@ import ImportTips from './user-import/ImportTips.jsx'
 import ReportTable from './user-import/ReportTable.jsx'
 import useSectionOptions from './user-import/useSectionOptions.js'
 
-const EXCEL_RE = /\.(xlsx|xlsm|xls|ods|numbers)$/i
+const OLD_EXCEL_RE = /\.(xls|ods|numbers)$/i
 const MB = 1024 * 1024
 
 /**
- * Add or edit users from a CSV:
- * choose type (+ section for students) → template/export → upload CSV (+ photos ZIP)
+ * Add or edit users from an Excel sheet (.xlsx; CSV still accepted):
+ * choose type (+ section for students) → template/export → upload the sheet (+ photos ZIP)
  * → preview → save the good rows → fix the skipped rows and upload again.
  */
 export default function UserImport({ user }) {
@@ -120,7 +120,7 @@ export default function UserImport({ user }) {
       <div className="page-head row center">
         <div style={{ flex: 1 }}>
           <Link className="text-link" to={backTo}>← Back</Link>
-          <h2 style={{ marginTop: 6 }}>Import users from CSV</h2>
+          <h2 style={{ marginTop: 6 }}>Import users from Excel</h2>
           <p>Add new users or update existing ones from a spreadsheet. Rows with problems are skipped; the rest are saved.</p>
         </div>
       </div>
@@ -188,8 +188,8 @@ export default function UserImport({ user }) {
           <div className="card">
             <h3>3. Upload and preview</h3>
             <div className="grid cols-2">
-              <Field label={`CSV file (max ${info.max_csv_mb} MB, ${info.max_rows} rows)`}>
-                <input type="file" accept=".csv,text/csv" onChange={pickFile(setCsv, 'csv')} key={`csv-${inputsKey}`} />
+              <Field label={`Excel file (.xlsx, max ${info.max_csv_mb} MB, ${info.max_rows} rows)`}>
+                <input type="file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" onChange={pickFile(setCsv, 'csv')} key={`csv-${inputsKey}`} />
               </Field>
               <Field label={`Photos ZIP — optional (max ${info.max_zip_mb} MB)`}>
                 <input type="file" accept=".zip,application/zip" onChange={pickFile(setPhotos, 'zip')}
@@ -312,9 +312,9 @@ function DownloadButton({ label, run, onError }) {
 }
 
 function csvProblem(file, info) {
-  if (EXCEL_RE.test(file.name)) return 'This is an Excel file. Save it as “CSV UTF-8” and upload the .csv file.'
-  if (!/\.(csv|txt)$/i.test(file.name)) return 'Choose a .csv file.'
-  if (file.size > info.max_csv_mb * MB) return `The CSV is larger than ${info.max_csv_mb} MB. Split it into smaller files.`
+  if (OLD_EXCEL_RE.test(file.name)) return 'Save it as an Excel Workbook (.xlsx) and upload that.'
+  if (!/\.(xlsx|csv|txt)$/i.test(file.name)) return 'Choose the Excel (.xlsx) file.'
+  if (file.size > info.max_csv_mb * MB) return `The file is larger than ${info.max_csv_mb} MB. Split it into smaller files.`
   if (file.size === 0) return 'The file is empty.'
   return ''
 }

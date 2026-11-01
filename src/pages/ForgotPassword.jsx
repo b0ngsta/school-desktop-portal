@@ -1,20 +1,26 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AuthLayout from '../components/AuthLayout.jsx'
+import SchoolCodeField from '../components/SchoolCodeField.jsx'
 import { ErrorBox, Field, PasswordInput } from '../components/ui.jsx'
+import useSchoolName from '../hooks/useSchoolName.js'
 import { fmtWait } from '../lib/format.js'
 import { passwordError } from '../lib/validators.js'
 import { requestResetCode, resetPassword, verifyResetCode } from '../services/auth.js'
+import { getLastOrgCode } from '../services/session.js'
 
 const RESEND_COOLDOWN = 30 // seconds between "send a new code" clicks
 const CODE_RE = /^\d{6}$/
 
 /**
- * Three steps: who are you → enter the emailed code → choose a new password.
- * A successful reset signs this device in (App picks up the new session).
+ * Three steps: which school + who are you → enter the emailed code → choose
+ * a new password. A successful reset signs this device in (App picks up the
+ * new session).
  */
 export default function ForgotPassword() {
   const [step, setStep] = useState('request') // request | code | password
+  const [orgCode, setOrgCode] = useState(getLastOrgCode)
+  const school = useSchoolName(orgCode)
   const [login, setLogin] = useState('')
   const [code, setCode] = useState('')
   const [error, setError] = useState('')
@@ -26,7 +32,7 @@ export default function ForgotPassword() {
     setBusy(true)
     setError('')
     try {
-      const res = await requestResetCode(login)
+      const res = await requestResetCode(login, orgCode)
       setCode('')
       setStep('code')
       setNotice(`If an account matches, we've emailed a 6-digit code. It expires in ${fmtWait(res.code_expires_in || 900)}.`)
@@ -44,7 +50,7 @@ export default function ForgotPassword() {
     setBusy(true)
     setError('')
     try {
-      await verifyResetCode(login, code)
+      await verifyResetCode(login, code, orgCode)
       setNotice('')
       setStep('password')
     } catch (err) {
@@ -63,16 +69,17 @@ export default function ForgotPassword() {
     >
       {step === 'request' && (
         <form className="grid" onSubmit={(e) => { e.preventDefault(); sendCode() }}>
+          <SchoolCodeField value={orgCode} onChange={setOrgCode} school={school} autoFocus={!orgCode} />
           <Field label="Username or email">
             <input value={login} onChange={(e) => setLogin(e.target.value)} autoComplete="username"
-              autoCapitalize="none" maxLength={120} required autoFocus />
+              autoCapitalize="none" maxLength={120} required autoFocus={Boolean(orgCode)} />
           </Field>
           <ul className="hint-list">
             <li>Several children on one email? Enter the child's username.</li>
             <li>No email on your account? Ask the school office.</li>
           </ul>
           <ErrorBox error={error} className="mb-0" />
-          <button disabled={busy || cooldown.left > 0}>
+          <button disabled={busy || cooldown.left > 0 || school.state === 'unknown'}>
             {busy ? 'Sending…' : cooldown.left > 0 ? `Wait ${cooldown.left}s` : 'Send code'}
           </button>
         </form>
@@ -91,7 +98,7 @@ export default function ForgotPassword() {
           <button disabled={busy || !CODE_RE.test(code)}>{busy ? 'Checking…' : 'Continue'}</button>
           <div className="split">
             <button type="button" className="link" onClick={() => { setError(''); setStep('request') }}>
-              Change username/email
+              Change school/username
             </button>
             <button type="button" className="link" disabled={busy || cooldown.left > 0} onClick={sendCode}>
               {cooldown.left > 0 ? `Send a new code (${cooldown.left}s)` : 'Send a new code'}
@@ -103,7 +110,7 @@ export default function ForgotPassword() {
 
       {step === 'password' && (
         <NewPasswordForm
-          onSubmit={(pw) => resetPassword(login, code, pw)}
+          onSubmit={(pw) => resetPassword(login, code, pw, orgCode)}
           onCodeRejected={(msg) => { setError(msg); setStep('code') }}
         />
       )}

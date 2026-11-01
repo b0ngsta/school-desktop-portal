@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { MANAGERS, api, fmtDate, fmtDateTime, uploadUserPhoto } from '../api.js'
+import { LeaveModal, LeftBadge, reactivate } from '../components/LeaveActions.jsx'
 import { Avatar, DateInput, EmailInput, Empty, ErrorBox, Field, Modal, StatusBadge } from '../components/ui.jsx'
 import { blanksToNull } from '../lib/validators.js'
 
@@ -14,9 +15,12 @@ export default function StudentPage({ user }) {
   const [editing, setEditing] = useState(null)
   const [editError, setEditError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [leaving, setLeaving] = useState(false)
+  const [notice, setNotice] = useState('')
   const photoInput = useRef(null)
 
   const isTeacher = user.user_type === 'teacher'
+  const isManager = MANAGERS.includes(user.user_type)
   const canEditProfile =
     MANAGERS.includes(user.user_type) ||
     myAssignments.some(
@@ -53,6 +57,16 @@ export default function StudentPage({ user }) {
     }
   }
 
+  async function bringBack() {
+    setError('')
+    try {
+      setNotice(await reactivate({ ...student, user_type: 'student' }))
+      load()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   async function changePhoto(e) {
     const file = e.target.files[0]
     e.target.value = ''
@@ -85,6 +99,17 @@ export default function StudentPage({ user }) {
       </div>
 
       {error && <div className="error" style={{ marginTop: 10 }}>{error}</div>}
+      {notice && <div className="badge green" style={{ marginTop: 10 }}>{notice}</div>}
+      {student.left_on && (
+        <div className="card" style={{ marginTop: 12, borderColor: 'var(--danger)' }}>
+          <b>Marked as left on {fmtDate(student.left_on)}</b>
+          {student.left_reason ? <span className="muted"> — {student.left_reason}</span> : null}
+          <div className="muted small" style={{ marginTop: 4 }}>
+            Was in {student.last_class_name || '—'}{student.last_section_name ? ` — Section ${student.last_section_name}` : ''}.
+            Their records below are kept.
+          </div>
+        </div>
+      )}
 
       {/* header card */}
       <div className="card" style={{ marginTop: 12 }}>
@@ -95,9 +120,11 @@ export default function StudentPage({ user }) {
           <div style={{ flex: 1, minWidth: 160 }}>
             <div className="row center" style={{ gap: 10 }}>
               <h2 style={{ fontSize: 20 }}>{student.full_name}</h2>
-              <span className={`badge ${student.is_active ? 'green' : 'red'} fit`}>
-                {student.is_active ? '● Active' : 'Inactive'}
-              </span>
+              {student.left_on ? <LeftBadge person={student} /> : (
+                <span className={`badge ${student.is_active ? 'green' : 'red'} fit`}>
+                  {student.is_active ? '● Active' : 'Inactive'}
+                </span>
+              )}
             </div>
             <div className="muted small" style={{ marginTop: 3 }}>
               {student.class_name} — Section {student.section_name}
@@ -105,7 +132,16 @@ export default function StudentPage({ user }) {
               {student.admission_no ? ` · ID: ${student.admission_no}` : ''}
             </div>
           </div>
-          {canEditProfile && (
+          {isManager && (
+            <div className="row-right fit" style={{ display: 'flex', gap: 8 }}>
+              {student.left_on ? (
+                <button className="soft" onClick={bringBack}>↩ Reactivate</button>
+              ) : (
+                <button className="danger" onClick={() => setLeaving(true)}>Mark as left</button>
+              )}
+            </div>
+          )}
+          {canEditProfile && !student.left_on && (
             <div className="row-right fit" style={{ display: 'flex', gap: 8 }}>
               <button className="ghost" onClick={() => photoInput.current?.click()}>
                 📷 Photo
@@ -156,8 +192,13 @@ export default function StudentPage({ user }) {
       {tab === 'overview' && <OverviewTab studentId={studentId} goTo={setTab} />}
       {tab === 'homework' && <HomeworkTab studentId={studentId} student={student} />}
       {tab === 'reports' && <ReportsTab studentId={studentId} />}
-      {tab === 'remarks' && <RemarksTab studentId={studentId} />}
+      {tab === 'remarks' && <RemarksTab studentId={studentId} user={user} />}
       {tab === 'attendance' && <AttendanceTab studentId={studentId} />}
+
+      {leaving && (
+        <LeaveModal person={{ ...student, user_type: 'student' }} onClose={() => setLeaving(false)}
+          onDone={() => { setNotice(`${student.full_name} is marked as left. Their records are kept.`); load() }} />
+      )}
 
       {editing && (
         <Modal title="Edit student profile" onClose={() => setEditing(null)} wide>
@@ -300,6 +341,22 @@ function HomeworkTab({ studentId, student }) {
       load()
     } catch (err) {
       setError(err.message)
+    }
+  }
+
+  async function saveEdit(e) {
+    e.preventDefault()
+    if (!editing.text.trim()) return setError('Remark is required')
+    setSaving(true)
+    setError('')
+    try {
+      await api(`/students/${studentId}/remarks/${editing.id}`, { method: 'PUT', body: { remark: editing.text.trim() } })
+      setEditing(null)
+      load()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -479,10 +536,14 @@ function ReportsTab({ studentId }) {
 }
 
 /* ---------------- remarks ---------------- */
-function RemarksTab({ studentId }) {
+function RemarksTab({ studentId, user }) {
   const [items, setItems] = useState(null)
   const [error, setError] = useState('')
   const [remark, setRemark] = useState('')
+  const [editing, setEditing] = useState(null) // {id, text}
+  const [saving, setSaving] = useState(false)
+  // the server allows changes by the teacher who wrote the remark, or managers
+  const canChange = (r) => MANAGERS.includes(user?.user_type) || r.created_by === user?.id
 
   const load = () =>
     api(`/students/${studentId}/remarks`).then(setItems).catch((e) => setError(e.message))
@@ -529,13 +590,25 @@ function RemarksTab({ studentId }) {
         ) : (
           items.map((r) => (
             <div className="list-item" key={r.id}>
-              <div className="row center">
-                <div style={{ flex: 1 }}>
-                  <b>{r.created_by_name}</b>
-                  <div style={{ marginTop: 2 }}>{r.remark}</div>
+              {editing?.id === r.id ? (
+                <form onSubmit={saveEdit} className="row">
+                  <textarea rows={2} value={editing.text} required autoFocus aria-label="Edit remark"
+                    onChange={(e) => setEditing({ ...editing, text: e.target.value })} />
+                  <button className="fit" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
+                  <button type="button" className="ghost fit" onClick={() => setEditing(null)}>Cancel</button>
+                </form>
+              ) : (
+                <div className="row center">
+                  <div style={{ flex: 1 }}>
+                    <b>{r.created_by_name || '—'}</b>
+                    <div style={{ marginTop: 2, whiteSpace: 'pre-wrap' }}>{r.remark}</div>
+                  </div>
+                  {canChange(r) && <>
+                    <button className="ghost fit" onClick={() => { setError(''); setEditing({ id: r.id, text: r.remark }) }}>Edit</button>
+                    <button className="danger fit" onClick={() => remove(r.id)}>Delete</button>
+                  </>}
                 </div>
-                <button className="danger fit" onClick={() => remove(r.id)}>Delete</button>
-              </div>
+              )}
               <div className="muted small" style={{ marginTop: 4 }}>{fmtDateTime(r.created_at)}</div>
             </div>
           ))

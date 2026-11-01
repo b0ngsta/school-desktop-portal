@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api.js'
+import { LeaveModal, LeftBadge, reactivate } from '../components/LeaveActions.jsx'
 import { Avatar, DateInput, EmailInput, Empty, ErrorBox, Field, Modal, Pager, PhotoPicker, StatusBadge } from '../components/ui.jsx'
 import usePagedList from '../hooks/usePagedList.js'
 import { ROLE_LABELS, canManageAccount, creatableStaffTypes, roleLabel } from '../lib/roles.js'
@@ -11,24 +12,28 @@ const PAGE_SIZE = 50
 
 const EMPTY = {
   username: '', password: '', full_name: '', email: '', phone: '',
-  user_type: 'teacher', subject: '', qualification: '', joining_date: '', address: '',
+  user_type: 'teacher', designation: '', subject: '', qualification: '', joining_date: '', address: '',
 }
 
 export default function Users({ user }) {
   const navigate = useNavigate()
   const [filter, setFilter] = useState('')
-  const list = usePagedList('/users' + (filter ? `?user_type=${filter}` : ''), PAGE_SIZE)
+  const [status, setStatus] = useState('active') // active · left · all (accounts are never deleted)
+  const query = new URLSearchParams({ ...(filter ? { user_type: filter } : {}), ...(status !== 'active' ? { status } : {}) })
+  const list = usePagedList('/users' + (query.toString() ? `?${query}` : ''), PAGE_SIZE)
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
+  const [leaving, setLeaving] = useState(null) // user row being marked as left
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState(null) // user row being edited
   const [teacherInfo, setTeacherInfo] = useState(null) // teacher id + name for the info modal
   const [assignFor, setAssignFor] = useState(null) // teacher for assignment modal
 
-  async function remove(u) {
-    if (!confirm(`Delete ${u.full_name}? This removes all their data.`)) return
+  async function bringBack(u) {
     setError('')
+    setNotice('')
     try {
-      await api(`/users/${u.id}`, { method: 'DELETE' })
+      setNotice(await reactivate(u))
       list.reload()
     } catch (err) {
       setError(err.message)
@@ -42,7 +47,7 @@ export default function Users({ user }) {
       <div className="page-head row center">
         <div style={{ flex: 1 }}>
           <h2>Users</h2>
-          <p>Staff accounts — students are added from their class section page or by CSV import.</p>
+          <p>Staff accounts — students are added from their class section page or by Excel import.</p>
         </div>
         <div className="row-right fit">
           <select value={filter} onChange={(e) => setFilter(e.target.value)} style={{ width: 160 }}>
@@ -51,17 +56,24 @@ export default function Users({ user }) {
               <option key={value} value={value}>{value === 'student' ? 'Students' : label}</option>
             ))}
           </select>
-          <Link to="/users/import"><button className="soft">⬆️ Import CSV</button></Link>
+          <select value={status} onChange={(e) => setStatus(e.target.value)} style={{ width: 130 }}
+            aria-label="Show">
+            <option value="active">Current</option>
+            <option value="left">Left</option>
+            <option value="all">Everyone</option>
+          </select>
+          <Link to="/users/import"><button className="soft">⬆️ Import from Excel</button></Link>
           <button onClick={() => setCreating(true)}>+ Add user</button>
         </div>
       </div>
       <ErrorBox error={error || list.error} />
+      {notice && <div className="badge green" style={{ marginBottom: 12 }}>{notice}</div>}
 
       <div className="card">
         {!users ? (
           <div className="skeleton">Loading…</div>
         ) : users.length === 0 ? (
-          <Empty icon="👥" text="No users found." />
+          <Empty icon="👥" text={status === 'left' ? 'Nobody has been marked as left.' : 'No users found.'} />
         ) : (
           <div className="table-wrap">
             <table>
@@ -80,6 +92,7 @@ export default function Users({ user }) {
                         <div className="row center" style={{ gap: 10, flexWrap: 'nowrap' }}>
                           <Avatar name={u.full_name} photo={u.photo_path} size={30} />
                           <span style={{ fontWeight: 600 }}>{u.full_name}</span>
+                          <LeftBadge person={u} />
                         </div>
                       </td>
                       <td className="muted">{u.username}</td>
@@ -102,9 +115,11 @@ export default function Users({ user }) {
                         {manageable && !isStudent && (
                           <button className="ghost sm" onClick={() => setEditing(u)}>Edit</button>
                         )}
-                        {manageable && u.id !== user.id && (
-                          <button className="danger" onClick={() => remove(u)}>Delete</button>
-                        )}
+                        {manageable && u.id !== user.id && (u.left_on ? (
+                          <button className="soft sm" onClick={() => bringBack(u)}>Reactivate</button>
+                        ) : (
+                          <button className="danger" onClick={() => setLeaving(u)}>Mark as left</button>
+                        ))}
                       </td>
                     </tr>
                   )
@@ -115,6 +130,10 @@ export default function Users({ user }) {
         )}
         <Pager offset={list.offset} limit={list.limit} total={list.total} onChange={list.setOffset} />
       </div>
+
+      {leaving && (
+        <LeaveModal person={leaving} onClose={() => setLeaving(null)} onDone={() => list.reload()} />
+      )}
 
       {creating && (
         <CreateUserModal actor={user} onClose={() => setCreating(false)}
@@ -161,7 +180,7 @@ function CreateUserModal({ actor, onClose, onCreated }) {
       }
       if (form.user_type === 'teacher') {
         body.teacher_info = blanksToNull({
-          subject: form.subject, qualification: form.qualification,
+          designation: form.designation, subject: form.subject, qualification: form.qualification,
           joining_date: form.joining_date, address: form.address,
         })
       }
@@ -209,6 +228,9 @@ function CreateUserModal({ actor, onClose, onCreated }) {
           </Field>
           {form.user_type === 'teacher' && (
             <>
+              <Field label="Designation (shown to parents, e.g. TGT)">
+                <input value={form.designation} onChange={set('designation')} maxLength={50} />
+              </Field>
               <Field label="Subject">
                 <input value={form.subject} onChange={set('subject')} />
               </Field>
@@ -291,7 +313,7 @@ function TeacherInfoModal({ teacher, onClose }) {
       .then((all) => {
         const t = all.find((x) => x.id === teacher.id) || {}
         setInfo({
-          subject: t.subject || '', qualification: t.qualification || '',
+          designation: t.designation || '', subject: t.subject || '', qualification: t.qualification || '',
           joining_date: t.joining_date || '', address: t.address || '',
         })
       })
@@ -321,6 +343,9 @@ function TeacherInfoModal({ teacher, onClose }) {
       ) : (
         <form onSubmit={save} className="grid">
           <div className="grid cols-2">
+            <Field label="Designation (e.g. TGT)">
+              <input value={info.designation} onChange={set('designation')} maxLength={50} />
+            </Field>
             <Field label="Subject"><input value={info.subject} onChange={set('subject')} /></Field>
             <Field label="Qualification"><input value={info.qualification} onChange={set('qualification')} /></Field>
             <Field label="Joining date">

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { api, fmtDateTime } from '../api.js'
 import { Empty, ErrorBox, Field, Modal, Pager, StatCard } from '../components/ui.jsx'
+import StudentSearch from '../components/StudentSearch.jsx'
 import usePagedList from '../hooks/usePagedList.js'
 
 const inr = (n) => '₹' + Number(n || 0).toLocaleString('en-IN')
@@ -11,7 +12,6 @@ export default function Payments() {
   // paged: without ?limit the server only returns the latest 200
   const list = usePagedList('/transactions', 50)
   const items = list.rows
-  const [students, setStudents] = useState([])
   const [error, setError] = useState('')
   const [creating, setCreating] = useState(false)
   const [form, setForm] = useState({ student_id: '', amount: '', method: 'cash', status: 'success' })
@@ -25,7 +25,6 @@ export default function Payments() {
   }
   useEffect(() => {
     load()
-    api('/students').then(setStudents).catch(() => {})
   }, [])
 
   async function submit(e) {
@@ -103,17 +102,8 @@ export default function Payments() {
       {creating && (
         <Modal error={error} title="Record transaction" onClose={() => setCreating(false)}>
           <form onSubmit={submit} className="grid">
-            <Field label="Student (optional)">
-              <select value={form.student_id}
-                onChange={(e) => setForm({ ...form, student_id: e.target.value })}>
-                <option value="">— none —</option>
-                {students.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.full_name}{s.class_name ? ` (${s.class_name} ${s.section_name || ''})` : ''}
-                  </option>
-                ))}
-              </select>
-            </Field>
+            <StudentSearch label="Student (optional)" required={false} value={form.student_id}
+              onChange={(id) => setForm({ ...form, student_id: id })} />
             <div className="grid cols-3">
               <Field label="Amount (₹)">
                 <input type="number" min="1" step="0.01" value={form.amount} required

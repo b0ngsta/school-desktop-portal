@@ -10,6 +10,7 @@ import { fmtWait } from '../lib/format.js'
 import {
   clearSession,
   getAccessToken,
+  getDeviceId,
   getRefreshToken,
   hasFreshAccessToken,
   requirePasswordChange,
@@ -128,7 +129,7 @@ export function refreshSession({ rejected } = {}) {
 
 // Endpoints called without a session (they must never trigger a refresh or
 // a sign-out: a 401 from /auth/login just means a wrong password).
-const PUBLIC_PATHS = ['/auth/login', '/auth/refresh', '/auth/logout', '/auth/forgot-password',
+const PUBLIC_PATHS = ['/auth/login', '/auth/captcha', '/auth/refresh', '/auth/logout', '/auth/forgot-password',
   '/auth/verify-reset-code', '/auth/reset-password']
 const isPublic = (path) => PUBLIC_PATHS.some((p) => path === p || path.startsWith(`${p}?`))
 
@@ -142,7 +143,7 @@ export async function request(path, { method = 'GET', body, formData, headers = 
 
   let sentToken = null
   const send = () => {
-    const h = { ...headers }
+    const h = { 'X-Device-Id': getDeviceId(), ...headers }
     sentToken = getAccessToken()
     // /auth/logout accepts the access token when there is one
     if (sentToken && (useAuth || path === '/auth/logout')) h.Authorization = `Bearer ${sentToken}`

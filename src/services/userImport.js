@@ -1,4 +1,4 @@
-/** Bulk user import from CSV (see backend FRONTEND_README §5). */
+/** Bulk user import from an Excel sheet (.xlsx; CSV also accepted) — see backend FRONTEND_README §5. */
 import { saveBlob } from '../lib/format.js'
 import { ApiError, api, fetchFile } from './http.js'
 
@@ -13,14 +13,14 @@ export const getImportColumns = (userType) => api(`/imports/users/columns?${quer
 
 export async function downloadImportTemplate(userType) {
   const { blob, filename } = await fetchFile(`/imports/users/template?${query({ user_type: userType })}`)
-  saveBlob(blob, filename || `${userType}_import_template.csv`)
+  saveBlob(blob, filename || `${userType}_import_template.xlsx`)
 }
 
 export async function downloadUsersExport(userType, classId, sectionId) {
   const { blob, filename } = await fetchFile(
     `/imports/users/export?${query({ user_type: userType, class_id: classId, section_id: sectionId })}`
   )
-  saveBlob(blob, filename || `${userType}s_export.csv`)
+  saveBlob(blob, filename || `${userType}s_export.xlsx`)
 }
 
 /**
