@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { MANAGERS, api, uploadUserPhoto } from '../api.js'
-import { Avatar, EmailInput, Empty, ErrorBox, Field, Modal, PhotoPicker } from '../components/ui.jsx'
+import ClassHomework from '../components/ClassHomework.jsx'
+import { Avatar, DateInput, EmailInput, Empty, ErrorBox, Field, Modal, PhotoPicker } from '../components/ui.jsx'
 import { blanksToNull } from '../lib/validators.js'
 
 const EMPTY = {
@@ -13,6 +14,8 @@ const EMPTY = {
 export default function SectionPage({ user }) {
   const { classId, sectionId } = useParams()
   const navigate = useNavigate()
+  const [params, setParams] = useSearchParams()
+  const tab = params.get('tab') === 'homework' ? 'homework' : 'students'
   const [students, setStudents] = useState(null)
   const [meta, setMeta] = useState(null) // {className, sectionName, classTeacher}
   const [myAssignments, setMyAssignments] = useState([])
@@ -31,6 +34,7 @@ export default function SectionPage({ user }) {
   const canEdit =
     isManager || assignedHere.some((a) => a.role === 'class_teacher')
   const canAddLessonPlan = isTeacher && assignedHere.length > 0
+  const canGiveHomework = isManager || assignedHere.length > 0
 
   async function load() {
     try {
@@ -45,6 +49,7 @@ export default function SectionPage({ user }) {
         className: cls?.name || `Class ${classId}`,
         sectionName: sec?.name || sectionId,
         classTeacher: sec?.class_teacher,
+        subjects: cls?.subjects || [],
       })
     } catch (e) {
       setError(e.message)
@@ -112,7 +117,21 @@ export default function SectionPage({ user }) {
       </div>
       <ErrorBox error={error} />
 
-      <div className="card">
+      <div className="tabs">
+        {[['students', '🧑‍🎓 Students'], ['homework', '📝 Homework']].map(([id, label]) => (
+          <button key={id} className={tab === id ? 'active' : ''}
+            onClick={() => setParams(id === 'students' ? {} : { tab: id }, { replace: true })}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'homework' && (
+        <ClassHomework classId={classId} sectionId={sectionId} subjects={meta?.subjects || []}
+          canAssign={canGiveHomework} />
+      )}
+
+      {tab === 'students' && <div className="card">
         {!students ? (
           <div className="skeleton">Loading…</div>
         ) : students.length === 0 ? (
@@ -144,7 +163,7 @@ export default function SectionPage({ user }) {
             </table>
           </div>
         )}
-      </div>
+      </div>}
 
       {adding && (
         <Modal title="Add student" onClose={() => setAdding(false)} wide>
@@ -166,7 +185,7 @@ export default function SectionPage({ user }) {
                 <input value={form.admission_no} onChange={set('admission_no')} />
               </Field>
               <Field label="Date of birth">
-                <input type="date" value={form.dob} onChange={set('dob')} />
+                <DateInput value={form.dob} onChange={set('dob')} />
               </Field>
               <Field label="Father's name">
                 <input value={form.father_name} onChange={set('father_name')} />

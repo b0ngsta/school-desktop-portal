@@ -45,6 +45,21 @@ Open **http://localhost:5173** → login `admin` / `admin123` (also `principal`/
     `Attendance` (section sheet, one-tap P/A/L, teachers mark own class), `Exams` (schedule + publish results),
     `Transport` (vehicles/routes), `BulkSMS` (groups + templates, simulated send), `Payments` (transaction history + stats)
 
+### Leave, substitution, timings, homework, notifications (Oct 2026)
+
+- `Leaves` (+ `components/SubstituteFinder.jsx`) — request / edit / delete leave; "Find substitute" lists, per date and period, the colleagues who are free and lets you request them
+- `Substitutions` — accept / decline requests sent to you, undo an accepted one, cancel the ones you sent (managers see all)
+- `TeacherTimetable` — clock times, prayer and break rows from School timings; "My timetable" is a dated week with substitutions
+- `SchoolTimings` — start time, prayer minutes, period length, periods per day, breaks (managers)
+- `SectionPage` → Homework tab (`components/ClassHomework.jsx`) — homework for the whole class + per-student submissions
+- `StaffAttendance`, `components/CheckInCard.jsx` (also on the Dashboard) — check in / out, times shown as "9:30 AM"
+- `Salary`, `FeeClaims` — ported from the mobile app
+- `components/NotificationBell.jsx`, `pages/Notifications.jsx`, `services/notifications.js` — in-app notifications
+- `components/ui.jsx` → `DateInput` / `TimeInput` (every date field opens a calendar), `Toggle`
+- `lib/schedule.js` — school-day maths shared with the mobile app; `lib/format.js` → `fmtTime`
+
+Backend work for all of this: **[BACKEND_README.md](BACKEND_README.md)**.
+
 ## Auth notes
 
 - Access tokens live in memory only; a page reload gets a new one from `/auth/refresh` with the stored refresh token.
@@ -65,3 +80,4 @@ so a redesign can mostly happen in those two files plus `AuthLayout.jsx` and the
 2. Open Class 5-A → add a student.
 3. Log in as the teacher: My Classes → open 5-A → add homework/report card, or "Add lesson plan".
 4. Log in as `admin`/`principal`: Lesson Plans → click the teacher. 👀
+# school-desktop-portal

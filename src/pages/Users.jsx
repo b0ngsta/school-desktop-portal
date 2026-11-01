@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api.js'
-import {
-  Avatar, EmailInput, Empty, ErrorBox, Field, Modal, Pager, PhotoPicker, StatusBadge,
-} from '../components/ui.jsx'
+import { Avatar, DateInput, EmailInput, Empty, ErrorBox, Field, Modal, Pager, PhotoPicker, StatusBadge } from '../components/ui.jsx'
 import usePagedList from '../hooks/usePagedList.js'
 import { ROLE_LABELS, canManageAccount, creatableStaffTypes, roleLabel } from '../lib/roles.js'
 import { blanksToNull } from '../lib/validators.js'
@@ -218,7 +216,7 @@ function CreateUserModal({ actor, onClose, onCreated }) {
                 <input value={form.qualification} onChange={set('qualification')} />
               </Field>
               <Field label="Joining date">
-                <input type="date" value={form.joining_date} onChange={set('joining_date')} />
+                <DateInput value={form.joining_date} onChange={set('joining_date')} />
               </Field>
               <Field label="Address">
                 <input value={form.address} onChange={set('address')} />
@@ -326,7 +324,7 @@ function TeacherInfoModal({ teacher, onClose }) {
             <Field label="Subject"><input value={info.subject} onChange={set('subject')} /></Field>
             <Field label="Qualification"><input value={info.qualification} onChange={set('qualification')} /></Field>
             <Field label="Joining date">
-              <input type="date" value={info.joining_date} onChange={set('joining_date')} />
+              <DateInput value={info.joining_date} onChange={set('joining_date')} />
             </Field>
             <Field label="Address"><input value={info.address} onChange={set('address')} /></Field>
           </div>

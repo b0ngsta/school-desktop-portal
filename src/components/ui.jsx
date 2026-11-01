@@ -108,7 +108,7 @@ export function PdfModal({ path, title, onClose }) {
 }
 
 /** `error`: optional message shown at the top (page errors are hidden behind the overlay). */
-export function Modal({ title, onClose, children, wide, error }) {
+export function Modal({ title, onClose, children, wide, xl, error, footer }) {
   return (
     <div
       className="fixed inset-0 z-50 grid animate-fade place-items-center bg-ink/50 p-[18px]"
@@ -116,7 +116,7 @@ export function Modal({ title, onClose, children, wide, error }) {
     >
       <div
         className={`max-h-[90vh] w-full animate-pop overflow-y-auto rounded-[18px] bg-white p-5 shadow-pop md:p-[26px] ${
-          wide ? 'max-w-[760px]' : 'max-w-[620px]'
+          xl ? 'max-w-[880px]' : wide ? 'max-w-[760px]' : 'max-w-[620px]'
         }`}
       >
         <div className="mb-4 flex items-center gap-2.5">
@@ -125,6 +125,7 @@ export function Modal({ title, onClose, children, wide, error }) {
         </div>
         <ErrorBox error={error} />
         {children}
+        {footer && <div className="mt-5 flex flex-wrap justify-end gap-2.5">{footer}</div>}
       </div>
     </div>
   )
@@ -250,4 +251,61 @@ export function PhotoPicker({ file, onChange, label = 'Profile picture (optional
       </div>
     </Field>
   )
+}
+
+/**
+ * Calendar date input ("YYYY-MM-DD"). Clicking anywhere on the field opens
+ * the browser's calendar (not just the small icon). Same onChange(event) as
+ * a plain <input>, so it drops in for <input type="date">.
+ */
+export function DateInput({ value, onChange, className = '', ...rest }) {
+  const ref = useRef(null)
+  const open = () => {
+    try { ref.current?.showPicker?.() } catch { /* not allowed (e.g. readOnly) */ }
+  }
+  return (
+    <div className={`picker-input ${className}`}>
+      <span className="picker-icon" aria-hidden="true">📅</span>
+      <input ref={ref} type="date" value={value || ''} onChange={onChange} onClick={open} {...rest} />
+    </div>
+  )
+}
+
+/** Clock time input (24h "HH:MM" value; the browser shows it as 6:30 AM where that's the locale). */
+export function TimeInput({ value, onChange, className = '', ...rest }) {
+  const ref = useRef(null)
+  const open = () => {
+    try { ref.current?.showPicker?.() } catch { /* ignore */ }
+  }
+  return (
+    <div className={`picker-input ${className}`}>
+      <span className="picker-icon" aria-hidden="true">🕐</span>
+      <input ref={ref} type="time" value={value || ''} onChange={onChange} onClick={open} {...rest} />
+    </div>
+  )
+}
+
+/** On/off switch. */
+export function Toggle({ checked, onChange, label, disabled }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={!!checked}
+      aria-label={label}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={`toggle ${checked ? 'on' : ''}`}
+    >
+      <span className="knob" />
+    </button>
+  )
+}
+
+/** Small loading spinner. */
+export const Spinner = () => <span className="spinner" aria-label="Loading" />
+
+/** Status pill with a friendly label (falls back to the raw status). */
+export function Pill({ tone = 'gray', children }) {
+  return <span className={`badge ${tone}`}>{children}</span>
 }

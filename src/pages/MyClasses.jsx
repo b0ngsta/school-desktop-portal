@@ -44,11 +44,18 @@ export default function MyClasses({ user }) {
                 🧑‍🎓 {classTeacher.student_count} students · you manage this section
               </div>
             </div>
-            <button onClick={() =>
-              navigate(`/classes/${classTeacher.class_id}/sections/${classTeacher.section_id}`)
-            }>
-              Open Class →
-            </button>
+            <div className="btn-row">
+              <button onClick={() =>
+                navigate(`/classes/${classTeacher.class_id}/sections/${classTeacher.section_id}?tab=homework`)
+              }>
+                📝 Homework
+              </button>
+              <button onClick={() =>
+                navigate(`/classes/${classTeacher.class_id}/sections/${classTeacher.section_id}`)
+              }>
+                Open Class →
+              </button>
+            </div>
           </div>
         </>
       )}
@@ -72,6 +79,9 @@ export default function MyClasses({ user }) {
                 <div className="row">
                   <Link to={`/classes/${a.class_id}/sections/${a.section_id}`} style={{ flex: 1 }}>
                     <button className="soft" style={{ width: '100%' }}>View Students</button>
+                  </Link>
+                  <Link to={`/classes/${a.class_id}/sections/${a.section_id}?tab=homework`} className="fit">
+                    <button className="ghost">📝 Homework</button>
                   </Link>
                   <Link to={`/lesson-plans/new?class_id=${a.class_id}&section_id=${a.section_id}`}
                     className="fit">

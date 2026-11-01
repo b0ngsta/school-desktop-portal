@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { MANAGERS, api } from '../api.js'
-import { Empty, StatCard } from '../components/ui.jsx'
+import { DateInput, Empty, StatCard } from '../components/ui.jsx'
 import { localISODate as today } from '../lib/format.js'
 
 export default function Attendance({ user }) {
@@ -122,7 +122,7 @@ export default function Attendance({ user }) {
           </div>
           <div>
             <label>Date</label>
-            <input type="date" value={date} max={today()}
+            <DateInput value={date} max={today()}
               onChange={(e) => setDate(e.target.value)} />
           </div>
           {rows && selected?.canMark && (

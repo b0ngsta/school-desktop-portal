@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { api, fmtDate } from '../api.js'
-import { Field, Modal } from '../components/ui.jsx'
+import { DateInput, Field, Modal } from '../components/ui.jsx'
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December']
@@ -284,7 +284,7 @@ function EventModal({ events, eventId, onClose, onSaved }) {
 
             <Field label="Dates">
               <div className="row center" style={{ gap: 8 }}>
-                <input type="date" value={dateInput}
+                <DateInput value={dateInput}
                   onChange={(e) => setDateInput(e.target.value)} />
                 <button type="button" className="soft fit" onClick={addDate}>Add</button>
               </div>

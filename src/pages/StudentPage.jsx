@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { MANAGERS, api, fmtDate, fmtDateTime, uploadUserPhoto } from '../api.js'
-import { Avatar, EmailInput, Empty, ErrorBox, Field, Modal, StatusBadge } from '../components/ui.jsx'
+import { Avatar, DateInput, EmailInput, Empty, ErrorBox, Field, Modal, StatusBadge } from '../components/ui.jsx'
 import { blanksToNull } from '../lib/validators.js'
 
 export default function StudentPage({ user }) {
@@ -154,7 +154,7 @@ export default function StudentPage({ user }) {
       </div>
 
       {tab === 'overview' && <OverviewTab studentId={studentId} goTo={setTab} />}
-      {tab === 'homework' && <HomeworkTab studentId={studentId} />}
+      {tab === 'homework' && <HomeworkTab studentId={studentId} student={student} />}
       {tab === 'reports' && <ReportsTab studentId={studentId} />}
       {tab === 'remarks' && <RemarksTab studentId={studentId} />}
       {tab === 'attendance' && <AttendanceTab studentId={studentId} />}
@@ -178,7 +178,7 @@ export default function StudentPage({ user }) {
                   onChange={(e) => setEditing({ ...editing, email: e.target.value })} />
               </Field>
               <Field label="Date of birth">
-                <input type="date" value={editing.dob || ''}
+                <DateInput value={editing.dob || ''}
                   onChange={(e) => setEditing({ ...editing, dob: e.target.value })} />
               </Field>
             </div>
@@ -280,33 +280,23 @@ function OverviewTab({ studentId, goTo }) {
 }
 
 /* ---------------- homework ---------------- */
-function HomeworkTab({ studentId }) {
+/**
+ * This student's homework. Homework is now given to the whole class from the
+ * section page; here staff only update this student's status (old
+ * per-student entries can still be deleted).
+ */
+function HomeworkTab({ studentId, student }) {
   const [items, setItems] = useState(null)
   const [error, setError] = useState('')
-  const [form, setForm] = useState({ title: '', due_date: '', status: 'pending', note: '' })
 
   const load = () =>
     api(`/students/${studentId}/homework`).then(setItems).catch((e) => setError(e.message))
   useEffect(() => { load() }, [studentId])
 
-  async function add(e) {
-    e.preventDefault()
-    setError('')
-    try {
-      await api(`/students/${studentId}/homework`, {
-        method: 'POST',
-        body: { ...form, due_date: form.due_date || null, note: form.note || null },
-      })
-      setForm({ title: '', due_date: '', status: 'pending', note: '' })
-      load()
-    } catch (err) {
-      setError(err.message)
-    }
-  }
-
   async function setStatus(hw, status) {
     try {
-      await api(`/students/${studentId}/homework/${hw.id}`, { method: 'PUT', body: { status } })
+      const scope = hw.scope === 'class' ? '?scope=class' : ''
+      await api(`/students/${studentId}/homework/${hw.id}${scope}`, { method: 'PUT', body: { status } })
       load()
     } catch (err) {
       setError(err.message)
@@ -326,30 +316,14 @@ function HomeworkTab({ studentId }) {
   return (
     <>
       {error && <div className="error">{error}</div>}
-      <div className="card">
-        <h3>Add homework entry</h3>
-        <form onSubmit={add} className="row">
-          <Field label="Title">
-            <input value={form.title} required
-              onChange={(e) => setForm({ ...form, title: e.target.value })} />
-          </Field>
-          <Field label="Due date">
-            <input type="date" value={form.due_date}
-              onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
-          </Field>
-          <Field label="Status">
-            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-              <option value="pending">Pending</option>
-              <option value="submitted">Submitted</option>
-              <option value="late">Late</option>
-            </select>
-          </Field>
-          <Field label="Note (visible to parents)">
-            <input value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />
-          </Field>
-          <button className="fit">Add</button>
-        </form>
-      </div>
+      {student?.class_id && student?.section_id && (
+        <div className="notice mb-3.5 flex flex-wrap items-center gap-2.5">
+          <span className="flex-1">📝 Homework is given to the whole class at once.</span>
+          <Link to={`/classes/${student.class_id}/sections/${student.section_id}?tab=homework`}>
+            <button className="soft sm">Give homework to {student.class_name} — {student.section_name}</button>
+          </Link>
+        </div>
+      )}
       <div className="card">
         {!items ? (
           <div className="skeleton">Loading…</div>
@@ -363,8 +337,11 @@ function HomeworkTab({ studentId }) {
               </thead>
               <tbody>
                 {items.map((h) => (
-                  <tr key={h.id}>
-                    <td style={{ fontWeight: 600 }}>{h.title}</td>
+                  <tr key={`${h.scope || 'student'}-${h.id}`}>
+                    <td style={{ fontWeight: 600 }}>
+                      {h.title}
+                      {h.subject && <span className="badge gray ml-2">{h.subject}</span>}
+                    </td>
                     <td>{fmtDate(h.due_date)}</td>
                     <td>
                       <select value={h.status} style={{ width: 130 }}
@@ -375,9 +352,11 @@ function HomeworkTab({ studentId }) {
                       </select>
                     </td>
                     <td>{h.note || '—'}</td>
-                    <td className="muted">{h.created_by_name}</td>
+                    <td className="muted">{h.created_by_name || h.assigned_by}</td>
                     <td style={{ textAlign: 'right' }}>
-                      <button className="danger" onClick={() => remove(h.id)}>Delete</button>
+                      {h.scope !== 'class' && (
+                        <button className="danger" onClick={() => remove(h.id)}>Delete</button>
+                      )}
                     </td>
                   </tr>
                 ))}

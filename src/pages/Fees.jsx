@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { api, fmtDate, fmtDateTime, photoUrl } from '../api.js'
-import { Avatar, Donut, Empty, Field, Modal, StatCard } from '../components/ui.jsx'
+import { Avatar, DateInput, Donut, Empty, Field, Modal, StatCard } from '../components/ui.jsx'
 
 const inr = (n) => '₹' + Number(n || 0).toLocaleString('en-IN')
 const CLAIM_BADGE = { pending: 'amber', approved: 'green', rejected: 'red' }
@@ -384,7 +384,7 @@ export default function Fees() {
                   onChange={(e) => setForm({ ...form, amount: e.target.value })} />
               </Field>
               <Field label="Due date">
-                <input type="date" value={form.due_date}
+                <DateInput value={form.due_date}
                   onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
               </Field>
             </div>
@@ -417,7 +417,7 @@ export default function Fees() {
                   onChange={(e) => setGenForm({ ...genForm, title: e.target.value })} />
               </Field>
               <Field label="Due date">
-                <input type="date" value={genForm.due_date}
+                <DateInput value={genForm.due_date}
                   onChange={(e) => setGenForm({ ...genForm, due_date: e.target.value })} />
               </Field>
             </div>

@@ -263,3 +263,63 @@
   .disclosure[open] > summary { @apply mb-2.5; }
   code { @apply rounded bg-page px-1 font-mono text-[12px]; }
 }
+
+/* ---------- pickers, switch, misc (feature pack: leave/substitution/timings) ---------- */
+@layer components {
+  .picker-input { @apply relative; }
+  .picker-input input { @apply relative cursor-pointer pl-9; }
+  /* the whole field opens the calendar (also where showPicker() is unsupported) */
+  .picker-input input::-webkit-calendar-picker-indicator {
+    @apply absolute inset-0 h-auto w-auto cursor-pointer opacity-0;
+  }
+  .picker-input .picker-icon {
+    @apply pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-[14px] leading-none;
+  }
+  input[type='checkbox'], input[type='radio'] {
+    @apply h-[18px] w-[18px] min-w-0 flex-none cursor-pointer rounded border-line p-0 accent-brand focus:ring-0;
+  }
+  .toggle {
+    @apply relative h-[26px] w-[46px] flex-none rounded-full bg-[#d0d5e2] p-0 transition-colors hover:bg-[#c2c8d8];
+  }
+  .toggle.on { @apply bg-brand hover:bg-brand-dark; }
+  .toggle .knob {
+    @apply absolute left-[3px] top-[3px] h-5 w-5 rounded-full bg-white shadow transition-transform;
+  }
+  .toggle.on .knob { @apply translate-x-5; }
+  .spinner {
+    @apply inline-block h-4 w-4 animate-spin rounded-full border-2 border-brand/30 border-t-brand align-middle;
+  }
+  .day-tabs { @apply mb-3.5 grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-2; }
+  .day-tab {
+    @apply rounded-xl border border-line bg-white px-3 py-2.5 text-center text-ink shadow-none hover:bg-page;
+  }
+  .day-tab.active { @apply border-brand bg-brand-soft text-brand hover:bg-brand-soft; }
+  .day-tab .sub { @apply block text-[11.5px] font-medium text-subtle; }
+  .feature-card {
+    @apply mb-3.5 flex items-center gap-3 rounded-xl border border-brand/15 bg-brand-soft/60 px-4 py-3.5;
+  }
+  .period-list { @apply overflow-hidden rounded-xl border border-line; }
+  .period-row { @apply border-b border-line last:border-b-0; }
+  .period-row.open { @apply bg-brand-soft/40; }
+  .period-head {
+    @apply grid w-full cursor-pointer grid-cols-[1fr_auto] items-center gap-2 rounded-none bg-transparent px-3.5 py-3
+      text-left font-normal text-ink hover:bg-page md:grid-cols-[70px_160px_1fr_auto];
+  }
+  .period-head:disabled { @apply cursor-default opacity-100 hover:bg-transparent; }
+  .teacher-table { @apply mx-3 mb-3 overflow-hidden rounded-lg border border-line bg-white; }
+  .teacher-row {
+    @apply grid grid-cols-[auto_1fr_auto] items-center gap-3 border-b border-line px-3 py-2.5 last:border-b-0
+      md:grid-cols-[auto_1.4fr_1fr_auto_auto];
+  }
+  .notif-dot { @apply h-2 w-2 flex-none rounded-full bg-brand; }
+  .bell-btn {
+    @apply relative grid h-[38px] w-[38px] place-items-center border border-line bg-white p-0 text-[17px] text-ink
+      hover:bg-page;
+  }
+  .bell-count {
+    @apply absolute -right-1.5 -top-1.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-danger px-1
+      text-[10px] font-extrabold text-white;
+  }
+  .sched-row { @apply flex items-center justify-between border-b border-line px-3 py-2 last:border-b-0; }
+  .sched-row.marker { @apply bg-page text-subtle; }
+}

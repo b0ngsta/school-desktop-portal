@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { MANAGERS, api, fmtDateTime } from '../api.js'
+import CheckInCard from '../components/CheckInCard.jsx'
 import { Donut, Empty, StatCard, WeekLine } from '../components/ui.jsx'
 
 const inr = (n) => '₹' + Number(n || 0).toLocaleString('en-IN')
@@ -44,6 +45,7 @@ export default function Dashboard({ user }) {
         <p>Here's what's happening in your school today.</p>
       </div>
       {error && <div className="error">{error}</div>}
+      <CheckInCard compact />
 
       <div className="grid cols-4" style={{ marginBottom: 20 }}>
         {isTeacher ? (

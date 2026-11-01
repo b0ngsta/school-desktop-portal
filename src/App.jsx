@@ -30,6 +30,14 @@ import TeacherTimetable from './pages/TeacherTimetable.jsx'
 import Transport from './pages/Transport.jsx'
 import BulkSMS from './pages/BulkSMS.jsx'
 import Payments from './pages/Payments.jsx'
+import Leaves from './pages/Leaves.jsx'
+import Substitutions from './pages/Substitutions.jsx'
+import StaffAttendance from './pages/StaffAttendance.jsx'
+import Salary from './pages/Salary.jsx'
+import FeeClaims from './pages/FeeClaims.jsx'
+import SchoolTimings from './pages/SchoolTimings.jsx'
+import Notifications from './pages/Notifications.jsx'
+import NotificationBell from './components/NotificationBell.jsx'
 
 const ALL_STAFF = [...MANAGERS, 'teacher']
 const WITH_DRIVER = [...ALL_STAFF, 'driver']
@@ -38,18 +46,24 @@ const NAV = [
   { to: '/', label: 'Dashboard', icon: '📊', roles: ALL_STAFF },
   { to: '/reception', label: 'Reception', icon: '🛎️', roles: MANAGERS },
   { to: '/fees', label: 'Fees', icon: '💰', roles: MANAGERS },
+  { to: '/fee-claims', label: 'Fee Claims', icon: '🧾', roles: ALL_STAFF },
   { to: '/users', label: 'Users', icon: '👥', roles: MANAGERS },
   { to: '/classes', label: 'Classes', icon: '🏫', roles: MANAGERS },
   { to: '/my-classes', label: 'My Classes', icon: '🏫', roles: ['teacher'] },
   { to: '/my-timetable', label: 'My Timetable', icon: '🗓️', roles: ['teacher'] },
   { to: '/attendance', label: 'Attendance', icon: '✅', roles: ALL_STAFF },
+  { to: '/my-attendance', label: 'My Attendance', icon: '🕘', roles: WITH_DRIVER },
+  { to: '/leaves', label: 'Leave Requests', icon: '🧳', roles: WITH_DRIVER },
+  { to: '/substitutions', label: 'Substitutions', icon: '🔁', roles: ALL_STAFF },
   { to: '/exams', label: 'Exams', icon: '📝', roles: ALL_STAFF },
   { to: '/calendar', label: 'Calendar', icon: '📅', roles: ALL_STAFF },
   { to: '/lesson-plans', label: 'Lesson Plans', icon: '📚', roles: ALL_STAFF },
   { to: '/transport', label: 'Transport', icon: '🚌', roles: [...MANAGERS, 'driver'] },
   { to: '/sms', label: 'Bulk SMS', icon: '💬', roles: MANAGERS },
   { to: '/payments', label: 'Payments', icon: '💳', roles: MANAGERS },
+  { to: '/salary', label: 'Salary', icon: '💵', roles: WITH_DRIVER },
   { to: '/notices', label: 'Notices', icon: '📣', roles: WITH_DRIVER },
+  { to: '/settings/school-timings', label: 'School Timings', icon: '⏰', roles: MANAGERS },
 ]
 
 const TITLES = {
@@ -69,6 +83,13 @@ const TITLES = {
   '/payments': 'Payments',
   '/notices': 'Notices',
   '/account': 'My account',
+  '/my-attendance': 'My Attendance',
+  '/leaves': 'Leave Requests',
+  '/substitutions': 'Substitutions',
+  '/salary': 'Salary',
+  '/fee-claims': 'Fee Claims',
+  '/settings/school-timings': 'School Timings',
+  '/notifications': 'Notifications',
   '/users/import': 'Import users',
 }
 
@@ -147,7 +168,7 @@ export default function App() {
       {/* sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-40 flex w-60 flex-col gap-[3px] border-r border-line
-          bg-white p-5 px-3.5 shadow-pop transition-transform md:translate-x-0 md:shadow-none ${
+          overflow-y-auto bg-white p-5 px-3.5 shadow-pop transition-transform md:translate-x-0 md:shadow-none ${
             navOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
       >
@@ -200,7 +221,8 @@ export default function App() {
           <span className="chip hidden md:inline-flex">
             🗓️ {new Date().toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}
           </span>
-          <span className="chip">{roleLabel(user.user_type)}</span>
+          <span className="chip hidden sm:inline-flex">{roleLabel(user.user_type)}</span>
+          <NotificationBell />
         </header>
         <div className="p-4 pb-12 md:px-7 md:pt-6">
           <Routes>
@@ -238,6 +260,15 @@ export default function App() {
             {isManager && <Route path="/sms" element={<BulkSMS />} />}
             {isManager && <Route path="/payments" element={<Payments />} />}
             <Route path="/attendance" element={<Attendance user={user} />} />
+            <Route path="/my-attendance" element={<StaffAttendance user={user} />} />
+            <Route path="/leaves" element={<Leaves user={user} />} />
+            <Route path="/salary" element={<Salary user={user} />} />
+            <Route path="/notifications" element={<Notifications user={user} />} />
+            {user.user_type !== 'driver' && (
+              <Route path="/substitutions" element={<Substitutions user={user} />} />
+            )}
+            {user.user_type !== 'driver' && <Route path="/fee-claims" element={<FeeClaims user={user} />} />}
+            {isManager && <Route path="/settings/school-timings" element={<SchoolTimings user={user} />} />}
             <Route path="/exams" element={<Exams user={user} />} />
             <Route path="/calendar" element={<Calendar user={user} />} />
             <Route path="/exams/:examId" element={<ExamDetail user={user} />} />

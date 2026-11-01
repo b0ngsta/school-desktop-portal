@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MANAGERS, api, fmtDate } from '../api.js'
-import { Empty, Field, Modal, PdfModal, StatCard } from '../components/ui.jsx'
+import { DateInput, Empty, Field, Modal, PdfModal, StatCard } from '../components/ui.jsx'
 
 const TONES = { upcoming: 'blue', ongoing: 'amber', completed: 'green' }
 
@@ -198,11 +198,11 @@ export default function Exams({ user }) {
                 </select>
               </Field>
               <Field label="Start date">
-                <input type="date" value={form.start_date} required
+                <DateInput value={form.start_date} required
                   onChange={(e) => setForm({ ...form, start_date: e.target.value })} />
               </Field>
               <Field label="End date">
-                <input type="date" value={form.end_date} required min={form.start_date}
+                <DateInput value={form.end_date} required min={form.start_date}
                   onChange={(e) => setForm({ ...form, end_date: e.target.value })} />
               </Field>
             </div>

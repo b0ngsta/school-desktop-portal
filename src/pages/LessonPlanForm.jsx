@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../api.js'
-import { Field } from '../components/ui.jsx'
+import { DateInput, Field } from '../components/ui.jsx'
 
 export default function LessonPlanForm({ user }) {
   const navigate = useNavigate()
@@ -104,11 +104,11 @@ export default function LessonPlanForm({ user }) {
               />
             </Field>
             <Field label="Duration — from">
-              <input type="date" value={form.duration_start}
+              <DateInput value={form.duration_start}
                 onChange={(e) => setForm({ ...form, duration_start: e.target.value })} />
             </Field>
             <Field label="Duration — to">
-              <input type="date" value={form.duration_end}
+              <DateInput value={form.duration_end}
                 onChange={(e) => setForm({ ...form, duration_end: e.target.value })} />
             </Field>
           </div>
